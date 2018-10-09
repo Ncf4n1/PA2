@@ -3,7 +3,7 @@ import socket
 import threading
 from time import sleep
 import random
-import RDT
+import rdt_3_0
 
 
 
@@ -130,9 +130,3 @@ if __name__ == '__main__':
         print(network.udt_receive())
         network.udt_send('MSG_FROM_SERVER')
         network.disconnect()
-
-
-
-
-
-    

@@ -1,4 +1,4 @@
-import Network
+import network_3_0
 import argparse
 from time import sleep
 import hashlib
@@ -59,7 +59,7 @@ class RDT:
     byte_buffer = ''
 
     def __init__(self, role_S, server_S, port):
-        self.network = Network.NetworkLayer(role_S, server_S, port)
+        self.network = network_3_0.NetworkLayer(role_S, server_S, port)
 
     def disconnect(self):
         self.network.disconnect()
@@ -97,7 +97,33 @@ class RDT:
         pass
 
     def rdt_3_0_send(self, msg_S):
-        pass
+
+        packet = Packet(self.seq_num, msg_S)
+        self.seq_num += 1
+        timeout = 5
+        end_timeout = time.time()
+
+        while True:
+            self.network.udt_send(packet.get_byte_S())
+            receive_packet = ''
+
+            while receive_packet == '' and end_timeout + timeout < time.time():
+                receive_packet = self.network.udt_receive()
+                end_timeout = time.time()
+
+            if receive_packet == '':
+                continue
+
+            self.byte_buffer += receive_packet
+            length = int(self.byte_buffer[:Packet.length_S_length])
+
+            if Packet.corrupt(receive_packet):
+                continue
+            else:
+                response_packet = Packet.from_byte_S(self.byte_buffer[0:length])
+                self.byte_buffer = self.byte_buffer[length:]
+
+            if ()
 
     def rdt_3_0_receive(self):
         pass
@@ -123,8 +149,3 @@ if __name__ == '__main__':
         print(rdt.rdt_1_0_receive())
         rdt.rdt_1_0_send('MSG_FROM_SERVER')
         rdt.disconnect()
-
-
-
-
-        
