@@ -122,8 +122,15 @@ class RDT:
             else:
                 response_packet = Packet.from_byte_S(self.byte_buffer[0:length])
                 self.byte_buffer = self.byte_buffer[length:]
+                if response_packet.seq_num < self.seq_num:
+                    ack = Packet(response_packet.seq_num, '1')
+                    self.network.udt_send(ack.get_byte_S())
 
-            if ()
+                if response_packet.msg_S == '1':
+                    self.seq_num += 1
+                elif response_packet.msg_S == '0':
+                    continue
+
 
     def rdt_3_0_receive(self):
         pass
