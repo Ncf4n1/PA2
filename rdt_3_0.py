@@ -1,6 +1,7 @@
 import network_3_0
 import argparse
 from time import sleep
+import time
 import hashlib
 
 
@@ -92,7 +93,6 @@ class RDT:
     def rdt_3_0_send(self, msg_S):
 
         packet = Packet(self.seq_num, msg_S)
-        self.seq_num = 1 - self.seq_num
         timeout = 5
         end_timeout = time.time()
 
@@ -100,9 +100,11 @@ class RDT:
             self.network.udt_send(packet.get_byte_S())
             receive_packet = ''
 
-            while receive_packet == '' and end_timeout + timeout < time.time():
+            timeout_start = time.time()
+            timeout_end = time.time()
+            while receive_packet == '' and timeout_end - timeout_start < timeout:
                 receive_packet = self.network.udt_receive()
-                end_timeout = time.time()
+                timeout_end = time.time()
 
             if receive_packet == '':
                 continue
@@ -114,21 +116,18 @@ class RDT:
                 continue
             else:
                 response_packet = Packet.from_byte_S(self.byte_buffer[0:length])
-                self.byte_buffer = self.byte_buffer[length:]
-                if response_packet.seq_num == self.seq_num:
-                    ack = Packet(response_packet.seq_num, '1')
-                    self.network.udt_send(ack.get_byte_S())
 
-                if response_packet.msg_S == '1':
-                    self.seq_num = 1 - self.seq_num
-                elif response_packet.msg_S == '0':
+                if response_packet.seq_num != self.seq_num or response_packet.msg_S == '0':
                     continue
-
+                else:
+                    self.byte_buffer = self.byte_buffer[length:]
+                    self.seq_num = 1 - self.seq_num
+                    break
 
     def rdt_3_0_receive(self):
         ret_S = None
-        byte_S = self.network.udt_receive()
-        self.byte_buffer += byte_S
+        received_packet = self.network.udt_receive()
+        self.byte_buffer += received_packet
 
         while True:
 
@@ -139,22 +138,19 @@ class RDT:
             if len(self.byte_buffer) < length:
                 return ret_S
 
-            if Packet.corrupt(byte_S):
+            if Packet.corrupt(self.byte_buffer[0:length]):
                 nak = Packet(self.seq_num, '0')
                 self.network.udt_send(nak.get_byte_S())
 
-            response = Packet.from_byte_S(self.byte_buffer[0:length])
-            if (response.msg_S != '1' and rcvpkt.msg_S != '0'):
-                        if rcvpkt.seq_num == self.seq_num:
-                            #ACK
-                            ack = Packet(self.seq_num, '1')
-                            self.network.udt_send(ack.get_byte_S())
-                            self.seq_num = 1 - self.seq_num
-
-                        ret_S = response.msg_S if (ret_S is None) else ret_S + response.msg_S #build message
-                #remove the packet bytes from the buffer
-            self.byte_buffer = self.byte_buffer[length:]
-        #if this was the last packet, will return on the next iteration
+            else:
+                response = Packet.from_byte_S(self.byte_buffer[0:length])
+                if (response.msg_S != '1' and response.msg_S != '0'):
+                    if response.seq_num == self.seq_num:
+                        ack = Packet(self.seq_num, '1')
+                        self.network.udt_send(ack.get_byte_S())
+                        self.seq_num = 1 - self.seq_num
+                    ret_S = response.msg_S if (ret_S is None) else ret_S + response.msg_S
+                self.byte_buffer = self.byte_buffer[length:]
         return ret_S
 
 
@@ -168,14 +164,14 @@ if __name__ == '__main__':
 
     rdt = RDT(args.role, args.server, args.port)
     if args.role == 'client':
-        rdt.rdt_1_0_send('MSG_FROM_CLIENT')
+        rdt.rdt_3_0_send('MSG_FROM_CLIENT')
         sleep(2)
-        print(rdt.rdt_1_0_receive())
+        print(rdt.rdt_3_0_receive())
         rdt.disconnect()
 
 
     else:
         sleep(1)
-        print(rdt.rdt_1_0_receive())
-        rdt.rdt_1_0_send('MSG_FROM_SERVER')
+        print(rdt.rdt_3_0_receive())
+        rdt.rdt_3_0_send('MSG_FROM_SERVER')
         rdt.disconnect()
