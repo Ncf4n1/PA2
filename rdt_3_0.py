@@ -113,14 +113,14 @@ class RDT:
     def rdt_3_0_receive(self):
         ret_S = None
         received_packet = self.network.udt_receive()
-        print('PACKET IN 3 RECEIVER RECEIVED\n')
+        #print('PACKET IN 3 RECEIVER RECEIVED\n')
         self.byte_buffer += received_packet
         holding_sequence = self.seq_num
 
         while holding_sequence == self.seq_num:
 
             if(len(self.byte_buffer) < Packet.length_S_length):
-                print('Return message 1...\n')
+                #print('Return message 1...\n')
                 return ret_S
 
             length = int(self.byte_buffer[:Packet.length_S_length])
