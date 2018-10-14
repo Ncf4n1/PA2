@@ -65,31 +65,6 @@ class RDT:
     def disconnect(self):
         self.network.disconnect()
 
-    def rdt_1_0_send(self, msg_S):
-        p = Packet(self.seq_num, msg_S)
-        self.seq_num += 1
-        self.network.udt_send(p.get_byte_S())
-
-    def rdt_1_0_receive(self):
-        ret_S = None
-        byte_S = self.network.udt_receive()
-        self.byte_buffer += byte_S
-        #keep extracting packets - if reordered, could get more than one
-        while True:
-            #check if we have received enough bytes
-            if(len(self.byte_buffer) < Packet.length_S_length):
-                return ret_S #not enough bytes to read packet length
-            #extract length of packet
-            length = int(self.byte_buffer[:Packet.length_S_length])
-            if len(self.byte_buffer) < length:
-                return ret_S #not enough bytes to read the whole packet
-            #create packet from buffer content and add to return string
-            p = Packet.from_byte_S(self.byte_buffer[0:length])
-            ret_S = p.msg_S if (ret_S is None) else ret_S + p.msg_S
-            #remove the packet bytes from the buffer
-            self.byte_buffer = self.byte_buffer[length:]
-            #if this was the last packet, will return on the next iteration
-
     def rdt_3_0_send(self, msg_S):
         packet = Packet(self.seq_num, msg_S)
         timeout = 3
@@ -97,7 +72,7 @@ class RDT:
 
         while holding_sequence == self.seq_num:
             self.network.udt_send(packet.get_byte_S())
-            #print('Packet sent in RDT 3 with message = ' + msg_S + '\n')
+            print('Packet sent in RDT 3 with message = ' + msg_S + '\n')
             receive_packet = ''
 
             timeout_start = time.time()
@@ -112,45 +87,45 @@ class RDT:
 
             length = int(receive_packet[:Packet.length_S_length])
             self.byte_buffer = receive_packet[length:]
-            #print('BUFFER UPDATED AND LENGTH ADDED IN SENDER\n')
+            print('BUFFER UPDATED AND LENGTH ADDED IN SENDER\n')
 
             if Packet.corrupt(receive_packet[0:length]):
                 print('Corrupted ACK in Sender\n')
                 self.byte_buffer = ''
             else:
                 response_packet = Packet.from_byte_S(receive_packet[0:length])
-                #print('PACKET RECEIVED WITH MESSAGE = ' + response_packet.msg_S + '\n')
-                #print('PACK SEQUENCE NUMBER = ' + str(response_packet.seq_num) + '\n')
-                #print('SEQUENCE NUMBER EXPECTED = ' + str(self.seq_num) + '\n')
+                print('PACKET RECEIVED WITH MESSAGE = ' + response_packet.msg_S + '\n')
+                print('PACK SEQUENCE NUMBER = ' + str(response_packet.seq_num) + '\n')
+                print('SEQUENCE NUMBER EXPECTED = ' + str(self.seq_num) + '\n')
                 if response_packet.seq_num < self.seq_num:
-                    #print('Receiving retransmitted data')
+                    print('Receiving retransmitted data')
                     ack = Packet(response_packet.seq_num, '1')
                     self.network.udt_send(ack.get_byte_S())
                 elif response_packet.msg_S == '1':
-                    #print('ACK RECEIVED')
+                    print('ACK RECEIVED')
                     self.seq_num += 1
-                    #print('Sequence number in Sender updated to ' + str(self.seq_num) + '\n')
+                    print('Sequence number in Sender updated to ' + str(self.seq_num) + '\n')
                 elif response_packet.msg_S == '0':
-                    #print('NAK Received\n')
+                    print('NAK Received\n')
                     self.byte_buffer = ''
-                    #print('Byte Buffer updated in Sender\n')
+                    print('Byte Buffer updated in Sender\n')
 
     def rdt_3_0_receive(self):
         ret_S = None
         received_packet = self.network.udt_receive()
-        #print('PACKET IN 3 RECEIVER RECEIVED\n')
+        print('PACKET IN 3 RECEIVER RECEIVED\n')
         self.byte_buffer += received_packet
         holding_sequence = self.seq_num
 
         while holding_sequence == self.seq_num:
 
             if(len(self.byte_buffer) < Packet.length_S_length):
-                #print('Return message 1...\n')
+                print('Return message 1...\n')
                 return ret_S
 
             length = int(self.byte_buffer[:Packet.length_S_length])
             if len(self.byte_buffer) < length:
-                #print('Return message 2...\n')
+                print('Return message 2...\n')
                 return ret_S
 
             if Packet.corrupt(self.byte_buffer):
@@ -161,10 +136,10 @@ class RDT:
 
             else:
                 response = Packet.from_byte_S(self.byte_buffer[0:length])
-                #print('Received Packet Message = ' + response.msg_S + '\n')
+                print('Received Packet Message = ' + response.msg_S + '\n')
 
                 if (response.msg_S == '1' or response.msg_S == '0'):
-                    #print('Receiver received an ACK or NAK')
+                    print('Receiver received an ACK or NAK')
                     self.byte_buffer = self.byte_buffer[length:]
                     continue
 
@@ -173,16 +148,16 @@ class RDT:
                     self.network.udt_send(ack.get_byte_S())
 
                 elif response.seq_num == self.seq_num:
-                    #print('Received Packet sequence number = ' + str(response.seq_num) + '\n')
+                    print('Received Packet sequence number = ' + str(response.seq_num) + '\n')
                     ack = Packet(self.seq_num, '1')
                     self.network.udt_send(ack.get_byte_S())
-                    #print('ACK sent back in 3 Receiver')
+                    print('ACK sent back in 3 Receiver')
                     self.seq_num += 1
-                    #print('Sequence number in Receiver updated to ' + str(self.seq_num) + '\n')
+                    print('Sequence number in Receiver updated to ' + str(self.seq_num) + '\n')
                 ret_S = response.msg_S if (ret_S is None) else ret_S + response.msg_S
-                #print('Return Message set to ' + ret_S + '\n')
+                print('Return Message set to ' + ret_S + '\n')
             self.byte_buffer = self.byte_buffer[length:]
-            #print('Byte Buffer Updated in 3 Receiver\n')
+            print('Byte Buffer Updated in 3 Receiver\n')
         return ret_S
 
 
