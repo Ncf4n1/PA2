@@ -27,7 +27,7 @@ if __name__ == '__main__':
         msg_S = None
         while msg_S == None:
             msg_S = rdt.rdt_3_0_receive()
-            #print('MSG in Client = ' + str(msg_S) + '\n')
+
             if msg_S is None:
                 if time_of_last_data + timeout < time.time():
                     break

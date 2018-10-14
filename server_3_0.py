@@ -37,7 +37,7 @@ if __name__ == '__main__':
     while(True):
         #try to receiver message before timeout
         msg_S = rdt.rdt_3_0_receive()
-        #print('MSG_S in Server = ' + str(msg_S) + '\n')
+
         if msg_S is None:
             if time_of_last_data + timeout < time.time():
                 break

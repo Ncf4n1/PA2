@@ -11,7 +11,7 @@ import rdt_3_0
 class NetworkLayer:
     #configuration parameters
     prob_pkt_loss = 0
-    prob_byte_corr = 0.1
+    prob_byte_corr = 0.15
     prob_pkt_reorder = 0
 
     #class variables
@@ -59,6 +59,7 @@ class NetworkLayer:
     def udt_send(self, msg_S):
         #return without sending if the packet is being dropped
         if random.random() < self.prob_pkt_loss:
+            print('<<<Packet Dropped>>>')
             return
         #corrupt a packet
         if random.random() < self.prob_byte_corr:
