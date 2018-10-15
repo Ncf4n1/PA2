@@ -11,7 +11,7 @@ import rdt_3_0
 class NetworkLayer:
     #configuration parameters
     prob_pkt_loss = 0.15
-    prob_byte_corr = 0
+    prob_byte_corr = 0.15
     prob_pkt_reorder = 0
 
     #class variables

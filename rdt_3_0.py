@@ -97,13 +97,13 @@ class RDT:
                 print('PACKET RECEIVED WITH MESSAGE = ' + response_packet.msg_S + '\n')
                 print('PACK SEQUENCE NUMBER = ' + str(response_packet.seq_num) + '\n')
                 print('SEQUENCE NUMBER EXPECTED = ' + str(self.seq_num) + '\n')
-                if response_packet.seq_num < self.seq_num:
+                if response_packet.seq_num != self.seq_num:
                     print('Receiving retransmitted data')
                     ack = Packet(response_packet.seq_num, '1')
                     self.network.udt_send(ack.get_byte_S())
                 elif response_packet.msg_S == '1':
                     print('ACK RECEIVED')
-                    self.seq_num += 1
+                    self.seq_num = 1 - self.seq_num
                     print('Sequence number in Sender updated to ' + str(self.seq_num) + '\n')
                 elif response_packet.msg_S == '0':
                     print('NAK Received\n')
@@ -143,7 +143,7 @@ class RDT:
                     self.byte_buffer = self.byte_buffer[length:]
                     continue
 
-                if response.seq_num < self.seq_num:
+                if response.seq_num != self.seq_num:
                     ack = Packet(response.seq_num, '1')
                     self.network.udt_send(ack.get_byte_S())
 
@@ -152,7 +152,7 @@ class RDT:
                     ack = Packet(self.seq_num, '1')
                     self.network.udt_send(ack.get_byte_S())
                     print('ACK sent back in 3 Receiver')
-                    self.seq_num += 1
+                    self.seq_num = 1 - self.seq_num
                     print('Sequence number in Receiver updated to ' + str(self.seq_num) + '\n')
                 ret_S = response.msg_S if (ret_S is None) else ret_S + response.msg_S
                 print('Return Message set to ' + ret_S + '\n')
